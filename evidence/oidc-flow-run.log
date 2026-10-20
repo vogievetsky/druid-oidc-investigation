@@ -1,0 +1,41 @@
+== 1. Browser asks the router for the console, unauthenticated
+      Set-Cookie pac4j.session.pac4jPreviousCsrfToken (102 bytes) [Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; HttpOnly]
+      Set-Cookie pac4j.session.pac4jCsrfToken (403 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie JSESSIONID (58 bytes) [Path=/]
+      Set-Cookie pac4j.session.pac4jCsrfTokenExpirationDate (457 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4jCsrfToken (105 bytes) [Domain=localhost; Path=/; SameSite=Lax; Secure; HttpOnly]
+      Set-Cookie pac4j.session.pac4jRequestedUrl (426 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4j.session.OidcClient$stateSessionParameter (525 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4j.session.OidcClient$nonceSessionParameter (441 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4j.session.OidcClient$codeVerifierSessionParameter (620 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+GET  http://localhost:8888/unified-console.html
+   -> 302  Location: http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code
+      Set-Cookie AUTH_SESSION_ID (112 bytes) [Version=1; Path=/realms/druid/; Secure; HttpOnly; SameSite=None]
+      Set-Cookie KC_RESTART (1254 bytes) [Version=1; Path=/realms/druid/; Secure; HttpOnly; SameSite=None]
+GET  http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=c...
+   -> 200
+
+== 2. Submit credentials for alice to the Keycloak login form
+      Set-Cookie KC_RESTART (51 bytes) [Version=1; Path=/realms/druid/; Max-Age=0]
+      Set-Cookie KEYCLOAK_IDENTITY (666 bytes) [Version=1; Path=/realms/druid/; Secure; HttpOnly; SameSite=None]
+      Set-Cookie KEYCLOAK_SESSION (163 bytes) [Version=1; Path=/realms/druid/; Max-Age=36000; Secure; SameSite=None]
+POST http://localhost:18080/realms/druid/login-actions/authenticate?session_code=W9I5AVHFha46u6zXhMi_P8BGshBdEVT...
+   -> 302  Location: http://localhost:8888/druid-ext/druid-pac4j/callback?state=09028abf3d&session_state=f8fcb17c-16c7-496e-8636-aa
+      Set-Cookie pac4j.session.OidcClient$attemptedAuthentication (114 bytes) [Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; HttpOnly]
+      Set-Cookie pac4j.session.pac4jUserProfiles (1558 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie JSESSIONID (58 bytes) [Path=/]
+      Set-Cookie pac4j.session.pac4jRequestedUrl (97 bytes) [Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; HttpOnly]
+GET  http://localhost:8888/druid-ext/druid-pac4j/callback?state=09028abf3d&session_state=f8fcb17c-16c7-496e-8636...
+   -> 302  Location: http://localhost:8888/unified-console.html
+      Set-Cookie pac4j.session.pac4jPreviousCsrfToken (411 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4j.session.pac4jCsrfToken (403 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4j.session.pac4jCsrfTokenExpirationDate (457 bytes) [Path=/; Expires=Tue, 20 Oct 2026 04:22:08 GMT; Max-Age=900; Secure; HttpOnly]
+      Set-Cookie pac4jCsrfToken (105 bytes) [Domain=localhost; Path=/; SameSite=Lax; Secure; HttpOnly]
+GET  http://localhost:8888/unified-console.html
+   -> 200
+
+   landed on http://localhost:8888/unified-console.html with 200, 2540 bytes
+
+== Router cookies now held by the 'browser': ['pac4j.session.pac4jCsrfToken', 'JSESSIONID', 'pac4j.session.pac4jCsrfTokenExpirationDate', 'pac4jCsrfToken', 'pac4j.session.OidcClient$stateSessionParameter', 'pac4j.session.OidcClient$nonceSessionParameter', 'pac4j.session.OidcClient$codeVerifierSessionParameter', 'pac4j.session.pac4jUserProfiles', 'pac4j.session.pac4jPreviousCsrfToken']
+GET /druid/coordinator/v1/leader -> 200  'http://localhost:8081'
+POST /druid/v2/sql -> 200  '[{"marker":"via-router"}]\n'

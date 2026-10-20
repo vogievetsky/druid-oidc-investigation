@@ -1,0 +1,11 @@
+{
+  "name": "druid-oidc-investigation-scripts",
+  "private": true,
+  "description": "Browser automation for the Druid web console OIDC investigation",
+  "scripts": {
+    "expiry": "node browser_expiry.js"
+  },
+  "dependencies": {
+    "playwright-chromium": "1.48.2"
+  }
+}

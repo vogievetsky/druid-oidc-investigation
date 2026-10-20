@@ -1,0 +1,32 @@
+[2.5s] open console
+[3.0s] landed on http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+pr
+[3.8s] back on http://localhost:8888/unified-console.html
+[4.4s]   browser console error: Failed to load resource: the server responded with a status of 404 (Not Found)
+[7.8s] router cookies stored by Chromium: pac4j.session.OidcClient$stateSessionParameter, pac4j.session.OidcClient$nonceSessionParameter, pac4j.session.OidcClient$codeVerifierSessionParameter, pac4j.session.pac4jUserProfiles, pac4j.session.pac4jPreviousCsrfToken, JSESSIONID, pac4j.session.pac4jCsrfToken, pac4j.session.pac4jCsrfTokenExpirationDate, pac4jCsrfToken
+[8.2s] fresh session: fetch                         -> 200 redirected=false
+[8.2s] fresh session: XHR (what the console does)   -> status 200 www-authenticate=null body=http://localhost:8081
+[8.2s] fresh session: XHR + X-Requested-With header -> status 200 www-authenticate=null body=http://localhost:8081
+[8.2s] waiting 150s for the IdP token to expire...
+[158.3s]   browser console error: Access to fetch at 'http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8888%2Fdruid-ext%2Fdruid-pac4j%
+[158.3s]   request failed: GET http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response net::ERR_FAILED
+[158.3s]   browser console error: Failed to load resource: net::ERR_FAILED
+[158.4s]   browser console error: Access to XMLHttpRequest at 'http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8888%2Fdruid-ext%2Fdru
+[158.4s]   request failed: GET http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response net::ERR_FAILED
+[158.4s]   browser console error: Failed to load resource: net::ERR_FAILED
+[158.4s]   browser console error: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+[158.4s] after expiry: fetch                         -> THREW TypeError: Failed to fetch
+[158.4s] after expiry: XHR (what the console does)   -> onerror (status 0) -> axios would report "Network Error"
+[158.4s] after expiry: XHR + X-Requested-With header -> status 401 www-authenticate=Bearer realm="pac4j" body=<html>
+<head>
+<meta http-equiv="Content-
+[158.4s] click the "Services" tab in the console
+[158.6s]   browser console error: Access to XMLHttpRequest at 'http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8888%2Fdruid-ext%2Fdru
+[158.6s]   request failed: GET http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response net::ERR_FAILED
+[158.6s]   browser console error: Failed to load resource: net::ERR_FAILED
+[163.6s] full page reload
+[163.8s]   request failed: GET http://localhost:8888/druid/coordinator/v1/leader net::ERR_ABORTED
+[165.2s] after reload, url = http://localhost:8888/unified-console.html#services
+[165.2s] login form shown? false
+[168.5s] after reload: fetch                         -> 200 redirected=false
+[168.5s] after reload: XHR (what the console does)   -> status 200 www-authenticate=null body=http://localhost:8081
+[168.5s] after reload: XHR + X-Requested-With header -> status 200 www-authenticate=null body=http://localhost:8081

@@ -1,0 +1,16 @@
+# Mock OIDC provider for the Druid OIDC investigation.
+# Keycloak in dev mode, with the "druid" realm (client + mock users) imported on startup.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    container_name: druid-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      # Druid and the browser must both reach Keycloak at the same URL (the token issuer),
+      # so it is published on localhost:18080 (8080 is avoided; Druid services use 808x).
+      - "18080:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
