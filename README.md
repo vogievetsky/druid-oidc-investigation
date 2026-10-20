@@ -37,8 +37,11 @@ driven by Playwright 1.48.2.
 - **pac4j on every service works.** The router forwards the browser's cookie, and the broker or coordinator decrypts it
   with the shared passphrase and gets the real user. Internal traffic needs `basic` (or similar) in front of `pac4j` in
   the authenticator chain.
-- Several doc gaps (callback URL, `authorizerName`, `clientAuthenticationMethod`, `oidcClaim`, session lifetime,
-  HTTPS) and a few extension issues (lost profile context, ~40 ms per request, no logout). See [ToDos](#todos).
+- **Of the six documented `clientAuthenticationMethod` values, only `client_secret_basic` and `client_secret_post`
+  work**, and the default (auto-detect) broke for Keycloak in the pac4j 5 upgrade. That setting only affects the
+  router↔IdP back channel. The browser session is the same cookie either way.
+- Several doc gaps (callback URL, `authorizerName`, `oidcClaim`, session lifetime, HTTPS) and a few extension issues
+  (lost profile context, ~40 ms per request, no logout). See [ToDos](#todos).
 
 ## How it works
 
@@ -163,17 +166,57 @@ also run pac4j with the same `cookiePassphrase`, behind an authenticator for int
   `cookiePassphrase` is effectively the signing key for every session. The docs' warning about a strong passphrase
   (CVE-2024-45384) is the right instinct, but the docs don't explain *why* it matters this much.
 
-### 5. Following the docs against Keycloak fails out of the box
+### 5. `clientAuthenticationMethod`: only 2 of the 6 documented values work, and the default broke
 
-With only the documented required properties, the first login fails with:
+**What the setting is:** how the router authenticates *itself* to the IdP's token endpoint when it exchanges the login
+`code` for tokens. This is a server-to-server call the browser never sees. It has **nothing to do with the browser
+session**: whichever method you pick, the session is the same encrypted `pac4j.session.pac4jUserProfiles` cookie.
 
-```
-HTTP ERROR 500 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be null
-```
+**Results** against Keycloak 26.0.7, one throwaway router per value, with a Keycloak client set up to give each value a
+fair chance ([`scripts/client_auth_methods.sh`](scripts/client_auth_methods.sh),
+[full log](evidence/client-auth-methods-run.log)):
 
-Keycloak's discovery document lists `token_endpoint_auth_methods_supported` as `["private_key_jwt",
-"client_secret_basic", "client_secret_post", ...]`, and pac4j auto-selects the first. The fix is the (documented)
-`druid.auth.pac4j.oidc.clientAuthenticationMethod=client_secret_basic`, but nothing tells you that you'll need it.
+| `clientAuthenticationMethod` | Keycloak client | Result |
+|---|---|---|
+| *(unset, auto-detect)* | confidential (`druid`) | ❌ `500 privateKeyJwtConfig cannot be null` |
+| `client_secret_basic` | confidential (`druid`) | ✅ login + proxied SQL work |
+| `client_secret_post` | confidential (`druid`) | ✅ login + proxied SQL work |
+| `client_secret_jwt` | signed-JWT-with-secret (`druid-jwt`) | ❌ `500 Configured authentication method (client_secret_jwt) is not supported.` |
+| `private_key_jwt` | confidential (`druid`) | ❌ `500 privateKeyJwtConfig cannot be null` |
+| `none` | public (`druid-public`) | ❌ `500 Preferred authentication method (none) not supported by provider according to provider metadata (...)` |
+| `none` | confidential (`druid`) | ❌ same as above |
+
+Why each failure happens (from pac4j's bytecode: `OidcAuthenticator` in pac4j-oidc 4.5.7 and 5.8.0):
+
+- **`client_secret_jwt`**: pac4j doesn't implement it. Its supported set is `{post, basic, none}` in 4.5.7 and
+  `{post, basic, private_key_jwt, none}` in 5.8.0. The docs list a value that can never work.
+- **`private_key_jwt`**: pac4j needs a `PrivateKeyJWTClientAuthnMethodConfig` (private key, key ID, JWS algorithm), and
+  Druid has no properties to provide one. It can never work in Druid.
+- **`none`**: pac4j rejects an explicitly configured method unless the IdP's discovery document lists it, and Keycloak's
+  doesn't list `none`. It might work with an IdP that advertises `none` (not tested). Druid also still requires
+  `clientSecret` for it.
+- **auto-detect (the default) is a regression from the pac4j 5 upgrade
+  ([#18259](https://github.com/apache/druid/pull/18259)).** With no explicit method, pac4j takes the **first** entry of
+  the IdP's `token_endpoint_auth_methods_supported` that's in its supported set. Druid never calls
+  `setSupportedClientAuthenticationMethods`, so pac4j's own default set is used.
+  - On 4.5.7 that set had no `private_key_jwt`, so Keycloak got `client_secret_basic`.
+  - On 5.8.0 it does, so Keycloak (which lists `private_key_jwt` first) gets a method Druid can't configure.
+
+  [#19020](https://github.com/apache/druid/pull/19020) (April 2026) added `clientAuthenticationMethod` as the
+  workaround, but the docs don't connect it to this failure.
+
+Which IdPs auto-detect breaks for depends only on the order of that list. Public discovery documents on 2026-10-19:
+
+| IdP | `token_endpoint_auth_methods_supported` (in order) | auto picks |
+|---|---|---|
+| Keycloak 26 | `private_key_jwt, client_secret_basic, client_secret_post, tls_client_auth, client_secret_jwt` | `private_key_jwt` ❌ |
+| Google | `client_secret_post, client_secret_basic` | `client_secret_post` ✅ |
+| Microsoft Entra ID | `client_secret_post, private_key_jwt, client_secret_basic, self_signed_tls_client_auth` | `client_secret_post` ✅ |
+| GitLab.com | `client_secret_basic, client_secret_post` | `client_secret_basic` ✅ |
+
+How the failure shows up: the router starts healthy. Every login attempt then shows the user a raw Jetty `HTTP ERROR
+500` page. The router logs only a Jetty `WARN ... HttpChannel - /unified-console.html` line with the pac4j exception on
+the next line, and no `ERROR`.
 
 ### 6. The Druid identity is always `sub`; `oidcClaim` doesn't apply
 
@@ -215,6 +258,8 @@ localhost).
 - `Pac4jSessionStore.set` also writes every value into the Jetty `HttpSession` (hence `JSESSIONID`), even though reads
   only use cookies.
 - There are no integration tests for pac4j at all (only unit tests with mocks).
+- `OIDCConfig` defaults `oidcClaim` to a constant named `DEFAULT_SCOPE` (value `"name"`). The behavior is right, but
+  the name is misleading next to the real `scope` property.
 
 ## ToDos
 
@@ -251,7 +296,10 @@ localhost).
 - [ ] Fix the "Creating an Authenticator" snippet: it sets `druid.auth.authenticatorChain` twice (`["pac4j"]` then
       `["jwt"]`), so a copy-paste keeps only `jwt`. Show them as alternatives or as one chain.
 - [ ] Say that `oidcClaim` applies only to the `jwt` authenticator; for pac4j the identity is `sub`.
-- [ ] Recommend setting `clientAuthenticationMethod` explicitly, and mention the Keycloak `privateKeyJwtConfig cannot be null` error.
+- [ ] Fix the `clientAuthenticationMethod` row: only `client_secret_basic` and `client_secret_post` work.
+      `client_secret_jwt` isn't implemented by pac4j, `private_key_jwt` can't be configured in Druid, and `none` needs
+      the IdP to advertise it. Recommend setting it explicitly, explain that it only affects the router↔IdP back
+      channel, and mention the Keycloak `privateKeyJwtConfig cannot be null` error.
 - [ ] Document session behavior: lifetime = min(IdP token lifetime, 15 min), not extended by activity, no logout,
       re-login is silent while the IdP session lasts.
 - [ ] Document that HTTPS is required (cookies are always `Secure`), localhost excepted.
@@ -262,6 +310,11 @@ localhost).
 ### `druid-pac4j` extension (for discussion with maintainers)
 
 - [ ] Restore `AuthenticationResult` context with the user profile (regression from #18259).
+- [ ] Restore pre-#18259 auto-detection: call `oidcConf.setSupportedClientAuthenticationMethods(...)` without
+      `PRIVATE_KEY_JWT` (Druid can't configure it), or default to `client_secret_basic` when unset.
+- [ ] Validate `clientAuthenticationMethod` at startup and fail fast for values that can't work, instead of a 500 on
+      every login. Make `clientSecret` optional when the method is `none`.
+- [ ] Log OIDC configuration failures at `ERROR` from the pac4j filter, not only as Jetty's generic `WARN`.
 - [ ] Let the identity come from a configurable claim (reuse `oidcClaim` or add a new property) instead of always `sub`.
 - [ ] Make the session cookie max age configurable (and consider re-issuing it on activity).
 - [ ] Remove the per-request cost: stop generating CSRF cookies nobody checks and/or cache derived keys in `CryptoService` usage.
@@ -289,7 +342,8 @@ The `druid` realm ([`keycloak/druid-realm.json`](keycloak/druid-realm.json)) con
 
 | What | Value |
 |---|---|
-| OIDC client | `druid` / secret `druid-client-secret`, redirect URIs `http://localhost:8888/*` |
+| OIDC client | `druid` / secret `druid-client-secret` (confidential), redirect URIs `http://localhost:8888/*` and `:9888/*` |
+| Extra clients | `druid-jwt` (signed JWT with secret) and `druid-public` (public), only used by `scripts/client_auth_methods.sh` |
 | User | `alice` / `alice` (Alice Admin, alice@example.com) |
 | User | `bob` / `bob` (Bob Reader, bob@example.com) |
 | Token lifetime | **120 s** (deliberately short so expiry is easy to observe; Keycloak's default is 300 s) |
@@ -326,6 +380,13 @@ traffic). These bypass OIDC, e.g. `curl -u admin:admin http://localhost:8082/...
   cd scripts && npm install && npx playwright install chromium && node browser_expiry.js
   ```
 
+- Every `clientAuthenticationMethod` value (about 4 minutes; starts a throwaway router per value on `:9888` next to the
+  running `oidc-all` cluster):
+
+  ```bash
+  scripts/client_auth_methods.sh /path/to/apache-druid-<version>
+  ```
+
 - Probes used for the router question:
 
   ```bash
@@ -351,5 +412,6 @@ druid/router-only.properties config overlay: pac4j on the router only (docs as w
 druid/all-services.properties config overlay: basic + pac4j on every service
 scripts/oidc_flow.py         stdlib-only scripted login that prints every hop
 scripts/browser_expiry.js    Playwright test: login, expiry, X-Requested-With probe, reload
+scripts/client_auth_methods.sh  tries every clientAuthenticationMethod value on a throwaway router
 evidence/                    logs and screenshots from the runs described above
 ```

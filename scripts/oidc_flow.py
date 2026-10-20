@@ -1,6 +1,7 @@
 """Walk the Druid pac4j OIDC login like a browser would, printing every hop.
 
 usage: python3 -I oidc_flow.py <user> <password> [path-after-login ...]
+Env: DRUID_URL (default http://localhost:8888).
 Cookies are saved to cookies.json next to this script so later runs can reuse them
 (pass --reuse as the first arg to skip login).
 """
@@ -16,6 +17,8 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 JAR_FILE = os.path.join(HERE, "cookies.json")
+DRUID_URL = os.environ.get("DRUID_URL", "http://localhost:8888")
+DRUID_HOST = urllib.parse.urlsplit(DRUID_URL).netloc
 jar = {}  # host -> {name: value}; ignores Secure/path like a localhost browser would
 
 
@@ -68,7 +71,7 @@ def follow(method, url, data=None, headers=None):
 
 def login(user, password):
     print("== 1. Browser asks the router for the console, unauthenticated")
-    status, url, text = follow("GET", "http://localhost:8888/unified-console.html")
+    status, url, text = follow("GET", DRUID_URL + "/unified-console.html")
     m = re.search(r'action="([^"]+)"', text)
     if not m:
         print("No login form found; got status", status, text[:300])
@@ -93,7 +96,7 @@ def main():
     else:
         login(args[0], args[1])
         args = args[2:]
-    print("\n== Router cookies now held by the 'browser':", list(jar.get("localhost:8888", {})))
+    print("\n== Router cookies now held by the 'browser':", list(jar.get(DRUID_HOST, {})))
     for path in args:
         method, _, rest = path.partition(" ")
         if not rest:
@@ -103,7 +106,7 @@ def main():
         if method == "POST":
             rest, _, body = rest.partition(" ")
             headers["Content-Type"] = "application/json"
-        status, loc, text = req(method, "http://localhost:8888" + rest, body, headers, quiet=True)
+        status, loc, text = req(method, DRUID_URL + rest, body, headers, quiet=True)
         print(f"{method} {rest} -> {status}" + (f" Location: {loc[:90]}" if loc else f"  {text[:160]!r}"))
     with open(JAR_FILE, "w") as f:
         json.dump(jar, f)

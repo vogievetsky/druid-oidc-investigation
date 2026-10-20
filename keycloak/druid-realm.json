@@ -15,8 +15,28 @@
       "secret": "druid-client-secret",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["http://localhost:8888/*"],
+      "redirectUris": ["http://localhost:8888/*", "http://localhost:9888/*"],
       "webOrigins": ["http://localhost:8888"]
+    },
+    {
+      "clientId": "druid-jwt",
+      "name": "client_secret_jwt test (scripts/client_auth_methods.sh)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret-jwt",
+      "secret": "druid-client-secret",
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:9888/*"]
+    },
+    {
+      "clientId": "druid-public",
+      "name": "none / public client test (scripts/client_auth_methods.sh)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:9888/*"]
     }
   ],
   "users": [

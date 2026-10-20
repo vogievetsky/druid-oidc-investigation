@@ -1,0 +1,89 @@
+
+=================== auto  (clientID=druid, clientAuthenticationMethod=auto)
+GET  http://localhost:9888/unified-console.html
+   -> 500
+No login form found; got status 500 <html>
+<title>Error 500 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be null</title>
+<body><h2>HTTP ERROR 500 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be 
+-- router errors:
+   1 WARN [qtp1751574336-79] org.eclipse.jetty.ee8.nested.HttpChannel - /unified-console.html
+   1 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be null
+-- keycloak warnings:
+
+=================== client_secret_basic  (clientID=druid, clientAuthenticationMethod=client_secret_basic)
+GET  http://localhost:9888/unified-console.html
+   -> 302  Location: http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code
+GET  http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=c...
+   -> 200
+POST http://localhost:18080/realms/druid/login-actions/authenticate?session_code=hWd629Pfrua5IuEocEIiMFp73FvbB9G...
+   -> 302  Location: http://localhost:9888/druid-ext/druid-pac4j/callback?state=ecfb203c44&session_state=07e25f54-1427-447e-84ff-24
+GET  http://localhost:9888/druid-ext/druid-pac4j/callback?state=ecfb203c44&session_state=07e25f54-1427-447e-84ff...
+   -> 302  Location: http://localhost:9888/unified-console.html
+GET  http://localhost:9888/unified-console.html
+   -> 200
+== Router cookies now held by the 'browser': ['pac4j.session.pac4jCsrfToken', 'JSESSIONID', 'pac4j.session.pac4jCsrfTokenExpirationDate', 'pac4jCsrfToken', 'pac4j.session.OidcClient$stateSessionParame
+GET /status/self -> 404  ''
+POST /druid/v2/sql -> 200  '[{"login":"ok"}]\n'
+-- router errors:
+   1 WARN [qtp1751574336-83] org.pac4j.oidc.profile.creator.TokenValidator - Preferred JWS algorithm: null not available. Using all metadata algorithms: [PS384, RS384, EdDSA, ES384, HS256, HS512, ES256, RS256, HS384, ES512, PS256, PS512, RS512]
+-- keycloak warnings:
+
+=================== client_secret_post  (clientID=druid, clientAuthenticationMethod=client_secret_post)
+GET  http://localhost:9888/unified-console.html
+   -> 302  Location: http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=code
+GET  http://localhost:18080/realms/druid/protocol/openid-connect/auth?scope=openid+profile+email&response_type=c...
+   -> 200
+POST http://localhost:18080/realms/druid/login-actions/authenticate?session_code=qVk6ddMJ8bQPJCqhL8GyfhAED4euA0c...
+   -> 302  Location: http://localhost:9888/druid-ext/druid-pac4j/callback?state=0cf348d96d&session_state=a0047c8f-2d20-488a-98d4-e9
+GET  http://localhost:9888/druid-ext/druid-pac4j/callback?state=0cf348d96d&session_state=a0047c8f-2d20-488a-98d4...
+   -> 302  Location: http://localhost:9888/unified-console.html
+GET  http://localhost:9888/unified-console.html
+   -> 200
+== Router cookies now held by the 'browser': ['pac4j.session.pac4jCsrfToken', 'JSESSIONID', 'pac4j.session.pac4jCsrfTokenExpirationDate', 'pac4jCsrfToken', 'pac4j.session.OidcClient$stateSessionParame
+GET /status/self -> 404  ''
+POST /druid/v2/sql -> 200  '[{"login":"ok"}]\n'
+-- router errors:
+   1 WARN [qtp1751574336-83] org.pac4j.oidc.profile.creator.TokenValidator - Preferred JWS algorithm: null not available. Using all metadata algorithms: [PS384, RS384, EdDSA, ES384, HS256, HS512, ES256, RS256, HS384, ES512, PS256, PS512, RS512]
+-- keycloak warnings:
+
+=================== client_secret_jwt (client set up for signed JWT)  (clientID=druid-jwt, clientAuthenticationMethod=client_secret_jwt)
+GET  http://localhost:9888/unified-console.html
+   -> 500
+No login form found; got status 500 <html>
+<title>Error 500 org.pac4j.core.exception.TechnicalException: Configured authentication method (client_secret_jwt) is not supported.</title>
+<body><h2>HTTP ERROR 500 org.pac4j.core.exception.TechnicalExcep
+-- router errors:
+   1 WARN [qtp1751574336-79] org.eclipse.jetty.ee8.nested.HttpChannel - /unified-console.html
+   1 org.pac4j.core.exception.TechnicalException: Configured authentication method (client_secret_jwt) is not supported.
+-- keycloak warnings:
+
+=================== private_key_jwt  (clientID=druid, clientAuthenticationMethod=private_key_jwt)
+GET  http://localhost:9888/unified-console.html
+   -> 500
+No login form found; got status 500 <html>
+<title>Error 500 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be null</title>
+<body><h2>HTTP ERROR 500 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be 
+-- router errors:
+   1 WARN [qtp1751574336-79] org.eclipse.jetty.ee8.nested.HttpChannel - /unified-console.html
+   1 org.pac4j.core.exception.TechnicalException: privateKeyJwtConfig cannot be null
+-- keycloak warnings:
+
+=================== none (public client)  (clientID=druid-public, clientAuthenticationMethod=none)
+GET  http://localhost:9888/unified-console.html
+   -> 500
+No login form found; got status 500 <html>
+<title>Error 500 org.pac4j.core.exception.TechnicalException: Preferred authentication method (none) not supported by provider according to provider metadata ([private_key_jwt, client_secret_basic, cl
+-- router errors:
+   1 WARN [qtp1751574336-79] org.eclipse.jetty.ee8.nested.HttpChannel - /unified-console.html
+   1 org.pac4j.core.exception.TechnicalException: Preferred authentication method (none) not supported by provider according to provider metadata ([private_key_jwt, client_secret_basic, client_secret_post, tls_client_auth, client_secret_jwt]).
+-- keycloak warnings:
+
+=================== none (confidential client)  (clientID=druid, clientAuthenticationMethod=none)
+GET  http://localhost:9888/unified-console.html
+   -> 500
+No login form found; got status 500 <html>
+<title>Error 500 org.pac4j.core.exception.TechnicalException: Preferred authentication method (none) not supported by provider according to provider metadata ([private_key_jwt, client_secret_basic, cl
+-- router errors:
+   1 WARN [qtp1751574336-79] org.eclipse.jetty.ee8.nested.HttpChannel - /unified-console.html
+   1 org.pac4j.core.exception.TechnicalException: Preferred authentication method (none) not supported by provider according to provider metadata ([private_key_jwt, client_secret_basic, client_secret_post, tls_client_auth, client_secret_jwt]).
+-- keycloak warnings:
